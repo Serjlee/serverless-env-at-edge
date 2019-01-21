@@ -14,12 +14,13 @@ Add it to your `serverless.yaml`:
 ```
 plugins:
   - serverless-jsonenv
-  
+
 ...
 
 custom:
   jsonenv:
-    fileName: lambda/config.js
+    fileName: lambda/config.js # required
+    camelCaseOutput: false # optional, if set to true, env keys will be converted from SNAKE_CASE to camelCase
 ```
 Generate the JSON file:
 ```

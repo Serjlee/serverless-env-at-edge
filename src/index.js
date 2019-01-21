@@ -3,6 +3,7 @@
 const fs = require('fs')
 const mkdirp = require('mkdirp')
 const path = require('path')
+const camelCase = require('camel-case')
 
 class ServerlessJSONenvPlugin {
   constructor(serverless, options) {
@@ -21,8 +22,6 @@ class ServerlessJSONenvPlugin {
     this.hooks = {
       'jsonenv:jsonenvHandler': this.jsonenvHandler.bind(this)
     }
-
-    this.environmentVariables = {}
   }
 
   jsonenvHandler() {
@@ -34,15 +33,27 @@ class ServerlessJSONenvPlugin {
 
     // collect global environment variables
     const globalEnvironment = this.serverless.service.provider.environment
-    this.environmentVariables = Object.assign(this.environmentVariables, globalEnvironment)
+    let environmentVariables = Object.assign({}, globalEnvironment)
 
     // collect environment variables of functions
     const functionEnvironment = this.collectFunctionEnvVariables()
-    this.environmentVariables = Object.assign(this.environmentVariables, functionEnvironment)
+    environmentVariables = Object.assign(environmentVariables, functionEnvironment)
+
+    if (this.serverless.service.custom.jsonenv.camelCaseOutput) {
+      environmentVariables = this.toCamelCase(environmentVariables);
+    }
 
     // write .env file
     mkdirp.sync(path.dirname(jsonFileName))
-    fs.writeFileSync(jsonFileName, JSON.stringify(this.environmentVariables, null, 2))
+    fs.writeFileSync(jsonFileName, JSON.stringify(environmentVariables, null, 2))
+  }
+
+  toCamelCase(obj) {
+    return Object.entries(obj).reduce((camelCased, pair) => {
+      return { ...camelCased,
+        [camelCase(pair[0])]: pair[1]
+      }
+    }, {})
   }
 
   collectFunctionEnvVariables() {

@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/Serjlee/serverless-jsonenv",
   "dependencies": {
+    "camel-case": "^3.0.0",
     "mkdirp": "^0.5.1"
   }
 }
