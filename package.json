@@ -1,6 +1,7 @@
 {
-  "name": "serverless-jsonenv",
-  "description": "serverless plugin to fetch environment variables and write them to a JSON file",
+  "name": "serverless-env-at-edge",
+  "version": "1.0.0",
+  "description": "helps to inject environment variables in a Lambda@Edge, via a JSON file",
   "main": "src/index.js",
   "author": "Luca Osti <luca.d.osti@gmail.com>",
   "license": "MIT",
@@ -9,12 +10,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Serjlee/serverless-jsonenv.git"
+    "url": "https://github.com/Serjlee/serverless-env-at-edge.git"
   },
   "bugs": {
-    "url": "https://github.com/Serjlee/serverless-jsonenv/issues"
+    "url": "https://github.com/Serjlee/serverless-env-at-edge/issues"
   },
-  "homepage": "https://github.com/Serjlee/serverless-jsonenv",
+  "homepage": "https://github.com/Serjlee/serverless-env-at-edge",
   "dependencies": {
     "camel-case": "^3.0.0",
     "mkdirp": "^0.5.1"

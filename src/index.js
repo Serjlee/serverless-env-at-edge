@@ -5,47 +5,61 @@ const mkdirp = require('mkdirp')
 const path = require('path')
 const camelCase = require('camel-case')
 
-class ServerlessJSONenvPlugin {
+class ServerlessEnvAtEdgePlugin {
   constructor(serverless, options) {
     this.serverless = serverless
     this.options = options
+    this.initialized = false;
 
     this.commands = {
-      jsonenv: {
+      envAtEdge: {
         usage: 'Create JSON files from serverless environment variables',
         lifecycleEvents: [
-          'jsonenvHandler'
+          'envAtEdgeHandler'
         ]
       }
     }
 
     this.hooks = {
-      'jsonenv:jsonenvHandler': this.jsonenvHandler.bind(this)
+      'envAtEdge:envAtEdgeHandler': this.envAtEdgeHandler.bind(this)
     }
   }
 
-  jsonenvHandler() {
-    const jsonFileName = this.serverless.service.custom.jsonenv.fileName;
-    if (!jsonFileName) {
-      return;
+  _init() {
+    this.initialized = true
+    this.functions = this.serverless.service.custom.envAtEdge.functions || []
+    this.functions = this.functions.reduce((obj, el) => {
+      obj[Object.keys(el)[0]] = el[Object.keys(el)[0]];
+      return obj
+    }, {});
+    this.camelCaseOutput = this.serverless.service.custom.envAtEdge.camelCaseOutput || false
+  }
+
+  envAtEdgeHandler() {
+    if (!this.initialized) {
+      this._init()
     }
-    this.serverless.cli.log('Creating json env file')
 
     // collect global environment variables
     const globalEnvironment = this.serverless.service.provider.environment
-    let environmentVariables = Object.assign({}, globalEnvironment)
 
-    // collect environment variables of functions
-    const functionEnvironment = this.collectFunctionEnvVariables()
-    environmentVariables = Object.assign(environmentVariables, functionEnvironment)
+    for (const [functionName, fileName] of Object.entries(this.functions)) {
+      const fun = this.serverless.service.functions[functionName]
+      if (!fun) {
+        this.serverless.cli.log(`${functionName} is not defined`)
+        throw new Error(`${functionName} is not defined`)
+      }
+      this.serverless.cli.log(`Creating JSON env file for ${functionName}: ${fileName}`)
+      let environmentVariables = Object.assign({}, globalEnvironment, fun.environment)
 
-    if (this.serverless.service.custom.jsonenv.camelCaseOutput) {
-      environmentVariables = this.toCamelCase(environmentVariables);
+      if (this.camelCaseOutput) {
+        environmentVariables = this.toCamelCase(environmentVariables);
+      }
+
+      // write .env file
+      mkdirp.sync(path.dirname(fileName))
+      fs.writeFileSync(fileName, JSON.stringify(environmentVariables, null, 2))
     }
-
-    // write .env file
-    mkdirp.sync(path.dirname(jsonFileName))
-    fs.writeFileSync(jsonFileName, JSON.stringify(environmentVariables, null, 2))
   }
 
   toCamelCase(obj) {
@@ -55,19 +69,6 @@ class ServerlessJSONenvPlugin {
       }
     }, {})
   }
-
-  collectFunctionEnvVariables() {
-    const functions = this.serverless.service.functions || {}
-    let environmentVariables = {}
-
-    Object.keys(functions).forEach(func => {
-      const environment = functions[func].environment
-
-      environmentVariables = Object.assign({}, environmentVariables, environment)
-    })
-
-    return environmentVariables
-  }
 }
 
-module.exports = ServerlessJSONenvPlugin
+module.exports = ServerlessEnvAtEdgePlugin
